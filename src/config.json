@@ -1,0 +1,37 @@
+{
+    "NotFoundPagePath": "../HTML/404.html",
+    "StorePath":"../Files",
+    "FileTypes": {
+        "text": {
+            "html": "text/html",
+            "css": "text/css",
+            "js": "text/javascript",
+            "xml": "text/xml",
+            "txt": "text/plain"
+        },
+        "image": {
+            "tiff": "image/tiff",
+            "png": "image/png",
+            "svg": "image/svg+xml",
+            "gif": "image/gif",
+            "ico": "image/x-icon",
+            "jpeg": "image/jpeg",
+            "jpg": "image/jpeg"
+        },
+        "audio": {
+            "wav": "audio/x-wav",
+            "wma": "audio/x-ms-wma",
+            "flac": "application/octet-stream",
+            "mp3": "application/octet-stream"
+        },
+        "video": {
+            "mp4": "video/mp4",
+            "wmv": "video/x-ms-wmv"
+        },
+        "application": {
+            "json": "application/json",
+            "pdf": "application/pdf",
+            "swf": "application/x-shockwave-flash"
+        }
+    }
+}
