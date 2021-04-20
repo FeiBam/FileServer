@@ -33,5 +33,6 @@
             "pdf": "application/pdf",
             "swf": "application/x-shockwave-flash"
         }
-    }
+    },
+    "logPath": "./log"
 }
