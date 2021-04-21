@@ -2,19 +2,28 @@ const Koa = require('koa')
 const App = new Koa()
 const fs = require('fs')
 const path = require('path')
+const https = require('https')
+const KoaCors = require('@koa/cors')
 const { loggerMiddleware,logger } = require('./unity/loggerMiddleware')
 
 const HaveFileMiddleware = require('./Middleware/HaveFileMiddleware')
 const GETFileMiddleware = require('./Middleware/GETFileMiddleware')
 const PUTFileMiddleware = require('./Middleware/PUTFileMiddleware')
 
+
 const config = (function (){
     const configJson = fs.readFileSync('./config.json')
     return JSON.parse(configJson)
 })()
 
+fs.existsSync(config.StorePath) ? null : fs.mkdirSync(config.StorePath)
+
 
 App.use(loggerMiddleware)
+
+App.use(KoaCors({
+    origin:"*"
+}))
 
 App.use(async (ctx,next)=>{
     return next().catch(err => {
@@ -44,7 +53,7 @@ App.use(async (ctx,next)=>{
 
 App.use(async (ctx,next)=>{
     if (ctx.URL.pathname === '/'){
-        ctx.redirect('/index.html')
+        ctx.redirect('/index')
     }
     else await next()
     if (ctx.status === 404){
@@ -62,5 +71,9 @@ App.use(GETFileMiddleware)
 App.use(PUTFileMiddleware)
 
 
+const options = {
+    key: fs.readFileSync('./ecc-privkey.pem'),
+    cert: fs.readFileSync('./0001_chain.pem')
+}
 
 App.listen(80)

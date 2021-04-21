@@ -15,7 +15,7 @@ class FileBase{
         return filePathSplit[filePathSplit.length - 1]
     }
     getFileType(){
-        return this.fileName.split('.')[1]
+        return this.fileName.split('.').pop()
     }
 }
 

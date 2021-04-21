@@ -8,10 +8,9 @@ const config = (function (){
 
 async function HaveFileMiddleware(ctx,next){
     const UrlInfo = ctx.URL
-    const UrlPath = UrlInfo.pathname
+    const UrlPath = decodeURI(UrlInfo.pathname)
     const PathSplit = UrlPath.split('/')
     const FilePath = path.join(config.StorePath,UrlPath)
-    console.log(path.resolve(__dirname,UrlPath))
     if (fs.existsSync(FilePath)){
         if (!fs.statSync(FilePath).isDirectory()) {
             ctx.state.FilePath = FilePath

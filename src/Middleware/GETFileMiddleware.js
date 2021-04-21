@@ -22,11 +22,11 @@ async function GETFileMiddleware (ctx, next){
                 return ctx.status = 206
             }else {
                 const file = new StreamFile(ctx.state.FilePath)
-                console.log(file.filePath)
+
                 ctx.set('Content-Type', getContentType(file.fileType))
                 ctx.set('Content-Length', file.fileInfo.size)
                 if (ctx.response.get('Content-Type') === 'application/octet-stream'){
-                    ctx.set('Content-Disposition',`attachment; filename=${file.fileName}`)
+                    ctx.set('Content-Disposition',`attachment; filename=${encodeURI(file.fileName)}`)
                 }
                 ctx.body = file.streamFile
                 ctx.state.fileType = file.fileType
