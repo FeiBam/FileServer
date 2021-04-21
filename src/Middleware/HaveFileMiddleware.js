@@ -11,6 +11,7 @@ async function HaveFileMiddleware(ctx,next){
     const UrlPath = UrlInfo.pathname
     const PathSplit = UrlPath.split('/')
     const FilePath = path.join(config.StorePath,UrlPath)
+    console.log(path.resolve(__dirname,UrlPath))
     if (fs.existsSync(FilePath)){
         if (!fs.statSync(FilePath).isDirectory()) {
             ctx.state.FilePath = FilePath
@@ -18,7 +19,7 @@ async function HaveFileMiddleware(ctx,next){
         }
     }
     else {
-        ctx.state.canWritePath = FilePath
+        ctx.state.canWritePathInfo = { UrlPath:UrlPath,FilePath:FilePath }
         await next()
     }
 }
