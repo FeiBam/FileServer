@@ -10,7 +10,9 @@
     "koa-sslify": "^5.0.0",
     "log4js": "^6.3.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "koa-compress": "^5.0.1"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

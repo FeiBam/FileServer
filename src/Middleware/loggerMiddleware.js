@@ -61,11 +61,11 @@ const loggerMiddleware = async (ctx, next) => {
     if (ctx.status === 404){
         FileType = 'html'
     }
-    let logText = `${ctx.method} ${ctx.status} ${ctx.url} 响应数据: ${ JSON.stringify(ctx.body) } - ${remoteAddress} - ${ms}ms`
+    let logText = `${ctx.method} ${ctx.status} ${decodeURI(ctx.url)} 响应数据: - ${remoteAddress} - ${ms}ms`
     if (ctx.body instanceof Stream || ctx.body instanceof Buffer){
-        logText = `${ctx.method} ${ctx.status} ${ctx.url}  文件类型 ${ ctx.state.fileType } - ${remoteAddress} - ${ms}ms`
+        logText = `${ctx.method} ${ctx.status} ${decodeURI(ctx.url)}  文件类型 ${ ctx.state.fileType } - ${remoteAddress} - ${ms}ms`
         if (ctx.status === 206){
-            logText = `${ctx.method} ${ctx.status} ${ctx.url} 请求数据范围： ${ctx.response.get('Content-Range')} 文件类型 ${ ctx.state.fileType } - ${remoteAddress} - ${ms}ms`
+            logText = `${ctx.method} ${ctx.status} ${decodeURI(ctx.url)} 请求数据范围： ${ctx.response.get('Content-Range')} 文件类型 ${ ctx.state.fileType } - ${remoteAddress} - ${ms}ms`
         }
     }
     logger.info(logText)

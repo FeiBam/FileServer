@@ -15,10 +15,10 @@ class FileTreeBase{
             if (fs.statSync(path.join(this.Path, PathItem)).isFile()) this.onFile(PathItem)
             if (fs.statSync(path.join(this.Path, PathItem)).isDirectory()) this.onDirectory(PathItem)
         }
-        this.DirTree.push(...this.Files,...this.Directorys)
+        this.DirTree.push(...this.Files , ...this.Directorys)
     }
     onDirectory(DirectoryName){
-        const Child = new FileTree(path.join(this.Path, DirectoryName))
+        const Child = new FileTree(path.join(this.Path , DirectoryName))
         Child.getDirTree()
         const DirectoryInfo = {
             DirectoryName:DirectoryName,
@@ -32,60 +32,6 @@ class FileTreeBase{
             FileName:FileName
         }
         this.Files.push(FileInfo)
-    }
-}
-
-class FileTree extends FileTreeBase{
-    constructor(props) {
-        super(props);
-    }
-    haveSomeDirectory(Path){
-        const PathSplit = this.getPathSplit(Path)
-        if (PathSplit.length === 1){
-            for (let DirectoryInfo of this.Directorys) {
-                if (DirectoryInfo.DirectoryName === PathSplit[0]) return true
-            }
-            return false
-        }else {
-            for (let DirectoryInfo of this.Directorys){
-                if (DirectoryInfo.DirectoryName === PathSplit[0]){
-                    return DirectoryInfo.DirectoryChild.haveSomeDirectory(this.GenPath(PathSplit))
-                }
-            }return false
-        }
-    }
-    haveSomeFile(Path){
-        const PathSplit = this.getPathSplit(Path)
-        if (PathSplit.length === 1){
-            for (let FileInfo of this.Files){
-                if (FileInfo.FileName === PathSplit[PathSplit.length - 1]){
-                    return true
-                }
-            }
-            return false
-        }else {
-            for (let DirectoryInfo of this.Directorys){
-                if (DirectoryInfo.DirectoryName === PathSplit[0]){
-                    return DirectoryInfo.DirectoryChild.haveSomeFile(this.GenPath(PathSplit))
-                }
-            }return false
-        }
-    }
-    createDirectoryAt(Path){
-        const PathSplit = this.getPathSplit(Path)
-        if (PathSplit.length === 1){
-            if (!this.haveSomeDirectory(PathSplit[PathSplit.length -1])){
-                fs.mkdirSync(path.join(this.Path,PathSplit[0]))
-                return true
-            }else return false
-        }else {
-            if (!this.haveSomeDirectory(PathSplit[0])) fs.mkdirSync(path.join(this.Path,PathSplit[0]))
-            for (let DirectoryInfo of this.Directorys){
-                if (DirectoryInfo.DirectoryName === PathSplit[0]){
-                    return DirectoryInfo.DirectoryChild.createDirectoryAt(this.GenPath(PathSplit))
-                }
-            }
-        }
     }
     GenPath(Arr){
         let Path = ''
@@ -111,8 +57,178 @@ class FileTree extends FileTreeBase{
         }
         return StrPath
     }
+    haveSomePath(Path){
+        if (fs.existsSync(path.join( this.Path,Path ))) return true
+        else return false
+    }
 }
 
-const fileTree = new FileTree(path.resolve(__dirname,'../../Files'))
-module.exports = { FileTreeBase,FileTree }
+class FileTree extends FileTreeBase{
+    constructor(props) {
+        super(props);
+    }
+    createDirectoryAt(Path){
+        const PathSplit = this.getPathSplit(Path)
+        if (PathSplit.length === 1){
+            if (!this.haveSomePath(PathSplit[PathSplit.length -1])){
+                fs.mkdirSync(path.join(this.Path,PathSplit[0]))
+                return true
+            }else return false
+        }else {
+            if (!this.haveSomePath(PathSplit[0])) {
+                fs.mkdirSync(path.join(this.Path,PathSplit[0]))
+                this.onDirectory(PathSplit[0])
+            }
+            for (let DirectoryInfo of this.Directorys){
+                if (DirectoryInfo.DirectoryName === PathSplit[0]){
+                    return DirectoryInfo.DirectoryChild.createDirectoryAt(this.GenPath(PathSplit))
+                }
+            }
+        }
+    }
+}
+
+class AuthPath extends FileTree{
+    constructor(Path,config,isChild = false) {
+        super(Path);
+        this.isChild = isChild
+        this.globalBlock = config.global ? config.global : undefined
+        this.BlockDirectory = config.BlockDirectory ? config.BlockDirectory : undefined
+        this.BlockFiles = config.BlockFiles ? config.BlockFiles : undefined
+        this.ConfigChild = config.Child ? config.Child : undefined
+        this.getDirTree()
+    }
+    isBlock(Path) {
+        const PathSplit = this.getPathSplit(Path)
+        if (!this.isChild){
+            const globalFileName = (()=>{
+                const FileName = PathSplit.slice().pop()
+                if (FileName.split('.').length > 1){
+                    return FileName
+                } return undefined
+            })()
+        }
+        const FileName = (()=>{
+            if (PathSplit.length === 1){
+                const FileName = PathSplit.slice().pop()
+                if (FileName.split('.').length > 1){
+                    return FileName
+                }
+            }
+        })()
+        if (!this.isChild){
+            if (this.globalBlock){
+                for (let globalItem of this.globalBlock){
+                    if (globalItem instanceof RegExp){
+                        if (Path.search(globalItem)) return true
+                    }
+                    else {
+                        if (globalItem.Type.toUpperCase() === 'FILE'){
+                            if (globalFileName) {
+                                if (globalFileName === globalItem.Name) return true
+                                if (globalItem.Regx){
+                                    if (globalFileName.search( globalItem.Regx )) return true
+                                }
+                            }
+                        }
+                        if (globalItem.Type.toUpperCase() === 'DIRECTORY'){
+                            for (let PathName of PathSplit){
+                                if (globalItem.Name === PathName) return true
+                                if (globalItem.Regx){
+                                    if (PathName.search(globalItem.Regx)) return true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (this.BlockFiles){
+            for (let BlockFileData of this.BlockFiles){
+                for (let HaveFileData of this.Files){
+                    if (BlockFileData instanceof RegExp){
+                        if (FileName.search(BlockFileData)) return true
+                    }
+                    if (BlockFileData === FileName) return true
+                }
+            }
+        }
+        if (this.BlockDirectory){
+            for (let BlockDirectoryData of this.BlockDirectory){
+                if (BlockDirectoryData instanceof RegExp){
+                    if (PathSplit.slice().shift().search(BlockDirectoryData)) return true
+                }
+                if (PathSplit.slice().shift() === BlockDirectoryData) return true
+            }
+        }
+        if (this.ConfigChild){
+            for (let ChildConfig of this.ConfigChild){
+                for (let HaveChild of this.Directorys){
+                    if (ChildConfig.DirectoryName === PathSplit.slice().shift() && ChildConfig.DirectoryName === HaveChild.DirectoryName){
+                        return HaveChild.DirectoryChild.isBlock(this.GenPath(PathSplit))
+                    }
+                }
+            }
+        }
+        return false
+    }
+    getDirTree() {
+        this.Paths = fs.readdirSync(this.Path)
+        let Config = {}
+        for (let PathItem of this.Paths) {
+            if (this.ConfigChild){
+                for (let ChildConfig of this.ConfigChild){
+                    if (fs.statSync(path.join(this.Path, PathItem)).isDirectory()){
+                        if (PathItem === ChildConfig.DirectoryName){
+                            Config = { ...ChildConfig }
+                            this.onDirectory( PathItem, Config )
+                        }
+                    } else this.onFile(PathItem)
+                }
+            }
+            else {
+                if (fs.statSync(path.join(this.Path , PathItem)).isDirectory()) this.onDirectory(PathItem , Config)
+                else this.onFile(PathItem)
+            }
+        }
+        this.DirTree.push(...this.Files , ...this.Directorys)
+    }
+    onDirectory(DirectoryName,Config){
+        const Child = new AuthPath(path.join(this.Path , DirectoryName) , Config ,true)
+        const DirectoryInfo = {
+            DirectoryName:DirectoryName,
+            DirectoryChild:Child
+        }
+        this.Directorys.push(DirectoryInfo)
+    }
+}
+
+
+//const config = {
+//    global:[], // ['Regx',{Type:'File', Name:'',Regx:''},{Type:'Directory',name:'',Regx:''}]
+//    BlockDirectory:[], // ['DirectoryName','Regx']
+//    BlockFiles:[],//['FileName','Regx']
+//    Child:[
+//        {
+//            DirectoryName: 'css',
+//            BlockDirectory:[''],
+//            Child:[
+//                {
+//                    DirectoryName:'sa',
+//                    BlockFiles:['SS.js']
+//                }
+//            ]
+//        }
+//    ]
+//}
+
+
+
+
+module.exports = {
+    FileTree,
+    FileTreeBase,
+    AuthPath
+}
+
 

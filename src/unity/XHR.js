@@ -1,65 +1,72 @@
-    class xhr{
-        constructor(url,callback, failedCallback){
-            this.method = ''
-            this.url = url
-            this.callback = callback
-            this.failedCallback = failedCallback
-            this.originHeaders = {}
-            this.XhrIsOpen = false
-            this.xhr = new XMLHttpRequest()
-        }
-        setHeader(headers){
-            this.originHeaders = {...this.originHeaders,...headers}
-            if (headers !== undefined) {
-                Object.getOwnPropertyNames(headers).forEach((key) => {
-                if (typeof headers[key] == "string")
-                    this.xhr.setRequestHeader(key, headers[key])
-                })
-            }
-        }
-        open(){
-            this.xhr.open(this.method,this.url)
-            this.XhrIsOpen = true
+class xhr{
+    constructor(url,callback, failedCallback){
+        this.method = 'GET'
+        this.url = url
+        this.callback = callback
+        this.failedCallback = failedCallback
+        this.originHeaders = {}
+        this.XhrIsOpen = false
+        this.xhr = new XMLHttpRequest()
+    }
+    setHeader(headers){
+        this.originHeaders = {...this.originHeaders,...headers}
+        if (headers !== undefined) {
+            Object.getOwnPropertyNames(headers).forEach((key) => {
+            if (typeof headers[key] == "string")
+                this.xhr.setRequestHeader(key, headers[key])
+            })
         }
     }
-    class PutFile extends xhr{
-        constructor(url,callback,failedCallback){
-            super(url,callback,failedCallback)
-            this.method = 'PUT'
+    open(url){
+        if(url){
+            this.url = url
         }
-        send(File,UsePromise = true){
-            console.log(File instanceof Blob)
-            if(!(File instanceof Blob)){
-                throw new Error('The file must be Blob')
-            }
-            if(!this.XhrIsOpen){
-                throw new Error('Please Open Xhr request')
-            }
-            if(!UsePromise){
+        this.xhr.open(this.method,this.url)
+        this.XhrIsOpen = true
+    }
+    send(data,UsePromise = true){
+        if(!this.XhrIsOpen){
+            throw new Error('Please Open Xhr request')
+        }
+        if(!UsePromise){
+            if(this.callback !== undefined && this.failedCallback !== undefined){
                 this.xhr.onerror = this.failedCallback
                 this.xhr.onload = this.callback
                 try{
-                    this.xhr.send(File)
+                    this.xhr.send(data)
                 }catch(e){
                     if(this.failedCallback !== undefined){
                         this.failedCallback()
                     }
                 }
-            }else return this.PromiseSend(File)
-        }
-        PromiseSend(File){
-            return new Promise((resolve,reject)=>{
-                this.xhr.onerror = (err)=>{
-                    reject(err)
-                }
-                this.xhr.onload = () =>{
-                    resolve(this.xhr.responseText)
-                }
-                try{
-                    this.xhr.send(File)
-                }catch(e){
-                    reject(e)
-                }
-            })
-        }
+            }else throw new Error('if you want not us Promise , plase set callback')
+        }else return this.PromiseSend(data)
     }
+    PromiseSend(data){
+        return new Promise((resolve,reject)=>{
+            this.xhr.onerror = (err)=>{
+                reject(err)
+            }
+            this.xhr.onload = () =>{
+                resolve(this.xhr.responseText)
+            }
+            try{
+                this.xhr.send(data)
+            }catch(e){
+                reject(e)
+            }
+        })
+    }
+}
+class PutFile extends xhr{
+    constructor(url,callback,failedCallback){
+        super(url,callback,failedCallback)
+        this.method = 'PUT'
+    }
+    sendBlob(BlobData,UsePromise){
+        if (!BlobData instanceof Blob){
+            throw new Error('The file must be Blob')
+        }
+        this.send(BlobData,UsePromise)
+    }
+}

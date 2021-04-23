@@ -14,6 +14,7 @@ async function HaveFileMiddleware(ctx,next){
     if (fs.existsSync(FilePath)){
         if (!fs.statSync(FilePath).isDirectory()) {
             ctx.state.FilePath = FilePath
+            ctx.state.UrlPath = UrlPath
             await next()
         }
     }

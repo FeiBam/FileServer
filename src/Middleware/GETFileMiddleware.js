@@ -13,6 +13,7 @@ async function GETFileMiddleware (ctx, next){
                 }
                 const file = new StreamFile(ctx.state.FilePath,range.rangeOffsetInfo.start,range.rangeOffsetInfo.end)
                 const rangeEnd = range.rangeOffsetInfo.end === undefined ? file.fileInfo.size : range.rangeOffsetInfo.end
+
                 ctx.set('Content-Type',getContentType(file.fileType))
                 ctx.set('Content-Range',`bytes ${range.rangeOffsetInfo.start}-${rangeEnd - 1 }/${file.fileInfo.size}`)
                 ctx.set('Content-Length',`${rangeEnd - range.rangeOffsetInfo.start}`)
@@ -22,7 +23,7 @@ async function GETFileMiddleware (ctx, next){
                 return ctx.status = 206
             }else {
                 const file = new StreamFile(ctx.state.FilePath)
-
+                ctx.set('Cache-Control','public, max-age=86400')
                 ctx.set('Content-Type', getContentType(file.fileType))
                 ctx.set('Content-Length', file.fileInfo.size)
                 if (ctx.response.get('Content-Type') === 'application/octet-stream'){

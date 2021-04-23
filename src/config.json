@@ -34,5 +34,22 @@
             "swf": "application/x-shockwave-flash"
         }
     },
-    "logPath": "./log"
+    "logPath": "./log",
+    "BlockList": {
+        "Child": [
+            {
+                "DirectoryName": "video",
+                "BlockFiles":["コミックがーるず_x264.mp4"],
+                "Child": [
+                    {
+                        "DirectoryName": "Ero",
+                        "BlockFiles":["Masturbation2.mp4"]
+                    }
+                ]
+            }
+        ]
+    },
+    "Account": {
+    },
+    "AccountTimeOut": 7200000
 }

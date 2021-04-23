@@ -24,7 +24,7 @@ async function PUTFileMiddleware (ctx,next){
         const fileTree = new FileTree(config.StorePath)
         fileTree.getDirTree()
         const FileDirectoryAt = fileTree.FilePathToDirectoryPath(ctx.state.canWritePathInfo.UrlPath)
-        if (!fileTree.haveSomeDirectory(FileDirectoryAt)) fileTree.createDirectoryAt(FileDirectoryAt)
+        if (!fileTree.haveSomePath(FileDirectoryAt)) fileTree.createDirectoryAt(FileDirectoryAt)
         const file = new StreamFile(ctx.state.canWritePathInfo.FilePath,undefined,undefined,true)
         ctx.req.pipe(file.streamFile)
         try {
@@ -38,7 +38,7 @@ async function PUTFileMiddleware (ctx,next){
             }))
             file.writeComplete()
             ctx.status = 200
-            ctx.body = {
+            return ctx.body = {
                 code:0,
                 message: 'ok',
                 data: {
