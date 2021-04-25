@@ -92,6 +92,7 @@ class AuthPath extends FileTree{
     constructor(Path,config,isChild = false) {
         super(Path);
         this.isChild = isChild
+        this.originConfig = config
         this.globalBlock = config.global ? config.global : undefined
         this.BlockDirectory = config.BlockDirectory ? config.BlockDirectory : undefined
         this.BlockFiles = config.BlockFiles ? config.BlockFiles : undefined
@@ -143,7 +144,7 @@ class AuthPath extends FileTree{
                 }
             }
         }
-        if (this.BlockFiles){
+        if (this.BlockFiles && this.BlockFiles.length > 0){
             for (let BlockFileData of this.BlockFiles){
                 for (let HaveFileData of this.Files){
                     if (BlockFileData instanceof RegExp){
@@ -153,7 +154,7 @@ class AuthPath extends FileTree{
                 }
             }
         }
-        if (this.BlockDirectory){
+        if (this.BlockDirectory && this.BlockDirectory.length > 0){
             for (let BlockDirectoryData of this.BlockDirectory){
                 if (BlockDirectoryData instanceof RegExp){
                     if (PathSplit.slice().shift().search(BlockDirectoryData)) return true
@@ -161,7 +162,7 @@ class AuthPath extends FileTree{
                 if (PathSplit.slice().shift() === BlockDirectoryData) return true
             }
         }
-        if (this.ConfigChild){
+        if (this.ConfigChild && this.ConfigChild.length > 0){
             for (let ChildConfig of this.ConfigChild){
                 for (let HaveChild of this.Directorys){
                     if (ChildConfig.DirectoryName === PathSplit.slice().shift() && ChildConfig.DirectoryName === HaveChild.DirectoryName){
@@ -174,22 +175,24 @@ class AuthPath extends FileTree{
     }
     getDirTree() {
         this.Paths = fs.readdirSync(this.Path)
-        let Config = {}
         for (let PathItem of this.Paths) {
-            if (this.ConfigChild){
-                for (let ChildConfig of this.ConfigChild){
-                    if (fs.statSync(path.join(this.Path, PathItem)).isDirectory()){
-                        if (PathItem === ChildConfig.DirectoryName){
-                            Config = { ...ChildConfig }
-                            this.onDirectory( PathItem, Config )
+            if (fs.statSync(path.join(this.Path,PathItem)).isDirectory()){
+                if (this.ConfigChild && this.ConfigChild.length > 0){
+                    for (let ChildConfigItem of this.ConfigChild){
+                        if (ChildConfigItem.DirectoryName === PathItem) {
+                            if (this.BlockDirectory && this.BlockDirectory.length > 0) {
+                                for (let isBlockDirectoryName of this.BlockDirectory) {
+                                    if (isBlockDirectoryName === '')throw new Error('The DirectoryName should not be ""')
+                                    else {
+                                        if (isBlockDirectoryName === ChildConfigItem.DirectoryName) this.onDirectory(PathItem, {})
+                                        else this.onDirectory(PathItem, {...ChildConfigItem})
+                                    }
+                                }
+                            } else this.onDirectory(PathItem, {...ChildConfigItem})
                         }
-                    } else this.onFile(PathItem)
-                }
-            }
-            else {
-                if (fs.statSync(path.join(this.Path , PathItem)).isDirectory()) this.onDirectory(PathItem , Config)
-                else this.onFile(PathItem)
-            }
+                    }
+                }else this.onDirectory(PathItem , {})
+            }else this.onFile(PathItem)
         }
         this.DirTree.push(...this.Files , ...this.Directorys)
     }
@@ -211,17 +214,10 @@ class AuthPath extends FileTree{
 //    Child:[
 //        {
 //            DirectoryName: 'css',
-//            BlockDirectory:[''],
-//            Child:[
-//                {
-//                    DirectoryName:'sa',
-//                    BlockFiles:['SS.js']
-//                }
-//            ]
+//            BlockDirectory:[],
 //        }
 //    ]
 //}
-
 
 
 
